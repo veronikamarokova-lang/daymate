@@ -8,14 +8,18 @@ import { CalendarPage } from './pages/CalendarPage';
 import { HabitsPage } from './pages/HabitsPage';
 import { StatsPage } from './pages/StatsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { TimetablePage } from './pages/TimetablePage';
+import { MorePage } from './pages/MorePage';
 
 const PAGES: Record<Route, () => React.JSX.Element> = {
   today: TodayPage,
+  timetable: TimetablePage,
   medications: MedicationsPage,
   calendar: CalendarPage,
   habits: HabitsPage,
   stats: StatsPage,
   settings: SettingsPage,
+  more: MorePage,
 };
 
 function useTheme() {

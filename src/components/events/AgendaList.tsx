@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CalendarClock, Check, Pencil, Pill, Repeat, RotateCcw, Trash2 } from 'lucide-react';
+import { Ban, CalendarClock, Check, MapPin, Pencil, Pill, Repeat, RotateCcw, Trash2, User } from 'lucide-react';
 import type { AgendaItem, DoseItem, EventItem } from '../../domain/agenda';
 import type { Medication } from '../../models/types';
 import { useStore } from '../../store/AppStore';
@@ -12,6 +12,7 @@ import { Card, Chip } from '../ui/misc';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { useToast } from '../ui/Toast';
 import { EventForm } from './EventForm';
+import { ClassForm } from './ClassForm';
 import { MoveEventDialog } from './MoveEventDialog';
 import { MedicationForm } from '../medications/MedicationForm';
 import { DoseStatusChip } from '../medications/DoseStatusChip';
@@ -42,7 +43,9 @@ export function AgendaList({ items }: { items: AgendaItem[] }) {
         ))}
       </ul>
 
-      {dialog?.type === 'edit' && <EventForm event={dialog.item.event} occurrenceDate={dialog.item.date} defaultDate={dialog.item.date} onClose={close} />}
+      {dialog?.type === 'edit' && (dialog.item.event.kind === 'class'
+        ? <ClassForm event={dialog.item.event} defaultDate={dialog.item.date} onClose={close} />
+        : <EventForm event={dialog.item.event} occurrenceDate={dialog.item.date} defaultDate={dialog.item.date} onClose={close} />)}
       {dialog?.type === 'move' && <MoveEventDialog event={dialog.item.event} occurrenceDate={dialog.item.date} onClose={close} />}
       {dialog?.type === 'med' && <MedicationForm medication={dialog.medication} onClose={close} />}
       {dialog?.type === 'delete' && (() => {
@@ -71,35 +74,63 @@ export function AgendaList({ items }: { items: AgendaItem[] }) {
   );
 }
 
-function EventRow({ item, onDialog }: { item: EventItem; onDialog: (type: 'edit' | 'move' | 'delete') => void }) {
+export function EventRow({ item, onDialog }: { item: EventItem; onDialog: (type: 'edit' | 'move' | 'delete') => void }) {
   const { data, update } = useStore();
-  const meta = CATEGORY_META[item.event.category];
+  const toast = useToast();
+  const ev = item.event;
+  const meta = CATEGORY_META[ev.category];
+  const fmt = data.settings.timeFormat;
+  const isClass = ev.kind === 'class';
   const done = item.status === 'done';
+  const cancelled = item.status === 'cancelled';
+  const setStatus = (status: 'done' | 'cancelled' | null) => update((d) => setEventStatus(d, ev.id, item.date, status));
+  const timeLabel = item.time ? formatTime(item.time, fmt) + (ev.endTime ? `–${formatTime(ev.endTime, fmt)}` : '') : 'Весь день';
+
   return (
-    <Card className="flex items-stretch gap-3 p-3.5 transition-shadow hover:shadow-md">
-      <span className={`w-1 shrink-0 rounded-full ${meta.bar}`} aria-hidden />
+    <Card className={`flex items-stretch gap-3 p-3.5 transition-shadow hover:shadow-md ${cancelled ? 'opacity-70' : ''}`}>
+      <span className={`w-1 shrink-0 rounded-full ${cancelled ? 'bg-slate-300 dark:bg-slate-600' : meta.bar}`} aria-hidden />
       <button
         type="button"
         role="checkbox"
         aria-checked={done}
+        disabled={cancelled}
         aria-label={done ? 'Снять отметку о выполнении' : 'Отметить выполненным'}
-        onClick={() => update((d) => setEventStatus(d, item.event.id, item.date, done ? null : 'done'))}
-        className={`mt-0.5 grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${
+        onClick={() => setStatus(done ? null : 'done')}
+        className={`mt-0.5 grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors disabled:opacity-40 ${
           done ? 'border-violet-600 bg-violet-600 text-white' : 'border-slate-300 text-transparent hover:border-violet-400 dark:border-slate-600'
         }`}
       >
         <Check size={15} strokeWidth={3} />
       </button>
       <div className="min-w-0 flex-1">
-        <div className={`font-medium break-words ${done ? 'text-slate-400 line-through dark:text-slate-500' : ''}`}>{item.event.title}</div>
+        <div className={`font-medium break-words ${done || cancelled ? 'text-slate-400 line-through dark:text-slate-500' : ''}`}>{ev.title}</div>
         <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-          <span className="font-semibold text-slate-700 dark:text-slate-200">{item.time ? formatTime(item.time, data.settings.timeFormat) : 'Весь день'}</span>
-          <Chip className={meta.chip}>{meta.label}</Chip>
-          {item.event.recurrence.freq !== 'none' && <Repeat size={13} aria-label="Повторяется" />}
+          <span className="font-semibold text-slate-700 dark:text-slate-200">{timeLabel}</span>
+          {cancelled
+            ? <Chip className="bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300">Отменено</Chip>
+            : <Chip className={meta.chip}>{ev.classType || meta.label}</Chip>}
+          {ev.recurrence.freq !== 'none' && <Repeat size={13} aria-label="Повторяется" />}
         </div>
-        {item.event.notes && <p className="mt-1.5 text-xs whitespace-pre-line text-slate-500 dark:text-slate-400">{item.event.notes}</p>}
+        {(ev.location || ev.teacher) && (
+          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600 dark:text-slate-300">
+            {ev.location && <span className="inline-flex items-center gap-1 font-medium"><MapPin size={13} />{ev.location}</span>}
+            {ev.teacher && <span className="inline-flex items-center gap-1"><User size={13} />{ev.teacher}</span>}
+          </div>
+        )}
+        {ev.notes && <p className="mt-1.5 text-xs whitespace-pre-line text-slate-500 dark:text-slate-400">{ev.notes}</p>}
       </div>
       <div className="-mr-1.5 flex shrink-0 self-start">
+        {isClass && (cancelled ? (
+          <IconButton label="Вернуть занятие" onClick={() => { setStatus(null); toast('Занятие возвращено'); }}><RotateCcw size={16} /></IconButton>
+        ) : (
+          <IconButton
+            label="Отменить это занятие"
+            className="hover:text-rose-600 dark:hover:text-rose-400"
+            onClick={() => { setStatus('cancelled'); toast('Занятие отменено, напоминания не будет', { undo: () => setStatus(null), undoLabel: 'Вернуть' }); }}
+          >
+            <Ban size={16} />
+          </IconButton>
+        ))}
         <IconButton label="Перенести" onClick={() => onDialog('move')}><CalendarClock size={17} /></IconButton>
         <IconButton label="Изменить" onClick={() => onDialog('edit')}><Pencil size={16} /></IconButton>
         <IconButton label="Удалить" className="hover:text-rose-600 dark:hover:text-rose-400" onClick={() => onDialog('delete')}><Trash2 size={16} /></IconButton>

@@ -6,9 +6,10 @@ interface ToastItem {
   text: string;
   tone: 'ok' | 'error';
   undo?: () => void;
+  undoLabel?: string;
 }
 
-type ShowToast = (text: string, options?: { tone?: 'ok' | 'error'; undo?: () => void }) => void;
+type ShowToast = (text: string, options?: { tone?: 'ok' | 'error'; undo?: () => void; undoLabel?: string }) => void;
 
 const ToastContext = createContext<ShowToast>(() => {});
 
@@ -21,7 +22,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const show = useCallback<ShowToast>(
     (text, options) => {
       const id = nextId.current++;
-      setItems((list) => [...list.slice(-2), { id, text, tone: options?.tone ?? 'ok', undo: options?.undo }]);
+      setItems((list) => [...list.slice(-2), { id, text, tone: options?.tone ?? 'ok', undo: options?.undo, undoLabel: options?.undoLabel }]);
       window.setTimeout(() => dismiss(id), options?.undo ? 6000 : 3500);
     },
     [dismiss],
@@ -41,7 +42,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 className="ml-1 rounded-lg px-2 py-1 font-semibold text-violet-300 hover:bg-white/10 dark:text-violet-700 dark:hover:bg-black/5"
                 onClick={() => { t.undo?.(); dismiss(t.id); }}
               >
-                Отменить
+                {t.undoLabel ?? 'Отменить'}
               </button>
             )}
           </div>

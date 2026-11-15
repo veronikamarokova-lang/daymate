@@ -193,3 +193,38 @@ describe('расписание для Android', () => {
     expect(buildNativeSchedule(quiet, now).notifications.every((n) => n.channelId === CHANNEL_REMINDER)).toBe(true);
   });
 });
+
+describe('расписание вуза', () => {
+  const lesson = event({
+    id: 'c1', kind: 'class', title: 'Матанализ', classType: 'Лекция', location: 'ауд. 305, корпус Б', endTime: '12:00',
+    recurrence: { freq: 'weekly', interval: 1, byWeekday: [1] }, reminder: { enabled: true, offsetMin: 10 },
+  });
+  const base = saveEvent(emptyData(), lesson);
+
+  it('напоминание за 10 минут называет аудиторию и не повторяется', async () => {
+    const { buildNativeSchedule } = await import('../reminders/nativeSchedule');
+    const now = at('2026-11-16', '08:00');
+    const r = planReminders(base, now).find((x) => x.key === 'event:c1:2026-11-16')!;
+    expect(r.fireAt).toBe(at('2026-11-16', '10:20').getTime());
+    expect(r.title).toBe('Матанализ (лекция)');
+    expect(r.body).toContain('ауд. 305, корпус Б');
+    const mine = buildNativeSchedule(base, now).notifications.filter((n) => n.extra.date === '2026-11-16');
+    expect(mine).toHaveLength(1);
+    const after = decideDeliveries(planReminders(base, at('2026-11-16', '10:20')), {}, at('2026-11-16', '10:20'), { repeatMinutes: 5, maxRepeats: 3 });
+    const later = decideDeliveries(planReminders(base, at('2026-11-16', '10:40')), after.ledger, at('2026-11-16', '10:40'), { repeatMinutes: 5, maxRepeats: 3 });
+    expect(after.deliveries).toHaveLength(1);
+    expect(later.deliveries).toHaveLength(0);
+  });
+
+  it('отмена одной пары убирает её напоминание, но не трогает следующую неделю', () => {
+    const cancelled = setEventStatus(base, 'c1', '2026-11-16', 'cancelled');
+    const plan = planReminders(cancelled, at('2026-11-16', '08:00'), 8);
+    expect(plan.some((x) => x.date === '2026-11-16')).toBe(false);
+    expect(plan.some((x) => x.date === '2026-11-23')).toBe(true);
+    expect(agendaFor(cancelled, '2026-11-16')[0].status).toBe('cancelled');
+    const s = computeStats(cancelled, '2026-11-16', '2026-11-16', at('2026-11-16', '20:00'));
+    expect(s.events.total).toBe(0);
+    expect(parseAppData(JSON.parse(JSON.stringify(cancelled))).eventLogs[0].status).toBe('cancelled');
+    expect(parseAppData(JSON.parse(JSON.stringify(cancelled))).events[0].location).toBe('ауд. 305, корпус Б');
+  });
+});

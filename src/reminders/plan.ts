@@ -15,6 +15,8 @@ export interface ReminderInstance {
   scheduledAt: number;
   /** Когда нужно напомнить (с учётом «напомнить заранее» и «отложить»). */
   fireAt: number;
+  /** Повторять ли без ответа. Для занятий — нет: громкий сигнал посреди пары ни к чему. */
+  repeat: boolean;
 }
 
 /** Напоминания старше этого срока уже не всплывают — они видны в списке дня как неподтверждённые. */
@@ -40,15 +42,18 @@ export function planReminders(data: AppData, now: Date, daysAhead = 1): Reminder
           body: [item.medication.dosage, 'Отметьте приём, когда примете.'].filter(Boolean).join(' · '),
           scheduledAt,
           fireAt: Number.isFinite(snoozed) ? snoozed : scheduledAt,
+          repeat: true,
         });
       } else {
         if (!item.event.reminder.enabled) continue;
         out.push({
           key: item.key, kind: 'event', refId: item.event.id, date, time: item.time,
-          title: item.event.title,
-          body: item.event.reminder.offsetMin > 0 ? `Начало в ${item.time}` : 'Запланировано на сейчас',
+          title: [item.event.title, item.event.classType && `(${item.event.classType.toLowerCase()})`].filter(Boolean).join(' '),
+          // Для занятия главное — где оно: аудитория идёт первой.
+          body: [item.event.location, `Начало в ${item.time}`, item.event.teacher].filter(Boolean).join(' · '),
           scheduledAt,
           fireAt: scheduledAt - item.event.reminder.offsetMin * 60_000,
+          repeat: item.event.kind !== 'class',
         });
       }
     }
@@ -106,7 +111,7 @@ export function decideDeliveries(
     if (!sameFire) {
       next[reminder.key] = { fireAt: reminder.fireAt, count: 1, lastAt: t };
       deliveries.push({ reminder, late: t - reminder.fireAt > LATE_AFTER_MS, repeat: 0 });
-    } else if (entry.count <= settings.maxRepeats && t - entry.lastAt >= settings.repeatMinutes * 60_000) {
+    } else if (reminder.repeat && entry.count <= settings.maxRepeats && t - entry.lastAt >= settings.repeatMinutes * 60_000) {
       next[reminder.key] = { ...entry, count: entry.count + 1, lastAt: t };
       deliveries.push({ reminder, late: false, repeat: entry.count });
     }

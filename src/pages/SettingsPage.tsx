@@ -72,7 +72,7 @@ export function SettingsPage() {
       return;
     }
     const ok = await showSystemNotification(
-      { key: 'daymate-test', kind: 'event', refId: 'test', date: todayKey(), time: '00:00', title: 'DayMate: проверка', body: '', scheduledAt: Date.now(), fireAt: Date.now() },
+      { key: 'daymate-test', kind: 'event', refId: 'test', date: todayKey(), time: '00:00', title: 'DayMate: проверка', body: '', scheduledAt: Date.now(), fireAt: Date.now(), repeat: false },
       'Так будут выглядеть напоминания.',
     );
     toast(ok ? 'Тестовое уведомление отправлено' : 'Не удалось показать уведомление', { tone: ok ? 'ok' : 'error' });

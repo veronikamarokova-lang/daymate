@@ -35,6 +35,7 @@ export function computeStats(data: AppData, from: DateKey, to: DateKey, now: Dat
     const day: DayStat = { date, total: 0, completed: 0 };
     if (date <= today) {
       for (const e of eventsOn(data, date)) {
+        if (e.status === 'cancelled') continue;
         stats.events.total++;
         day.total++;
         if (e.status === 'done') { stats.events.done++; day.completed++; }

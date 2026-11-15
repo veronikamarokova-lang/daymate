@@ -48,7 +48,8 @@ export function buildNativeSchedule(
 
   for (const r of planReminders(data, now, HORIZON_DAYS)) {
     if (dismissed.has(`${r.key}@${r.fireAt}`)) continue;
-    for (let attempt = 0; attempt <= maxRepeats; attempt++) {
+    const attempts = r.repeat ? maxRepeats : 0;
+    for (let attempt = 0; attempt <= attempts; attempt++) {
       const at = r.fireAt + attempt * repeatMinutes * 60_000;
       if (at - r.fireAt >= STALE_AFTER_MS) break;
       const id = notificationId(r.key, attempt);

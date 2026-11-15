@@ -32,6 +32,15 @@ export interface PlannerEvent {
   /** Пусто — событие «на весь день». */
   time?: TimeOfDay;
   notes?: string;
+  /** 'class' — занятие из расписания вуза. */
+  kind?: 'class';
+  /** Время окончания (для занятий). */
+  endTime?: TimeOfDay;
+  /** Где проходит: аудитория, корпус. */
+  location?: string;
+  teacher?: string;
+  /** Лекция, практика и т. п. */
+  classType?: string;
   recurrence: Recurrence;
   /** Даты, исключённые из серии (удалённые или перенесённые экземпляры). */
   exdates: DateKey[];
@@ -40,7 +49,8 @@ export interface PlannerEvent {
   updatedAt: string;
 }
 
-export type EventStatus = 'done' | 'skipped';
+/** cancelled — занятие или событие отменено: не напоминаем и не считаем в статистике. */
+export type EventStatus = 'done' | 'skipped' | 'cancelled';
 
 export interface EventLog {
   eventId: string;

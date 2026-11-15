@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { BellRing, CalendarPlus, Check, ListChecks, Pill, Plus, Sparkles, Sun } from 'lucide-react';
+import { BellRing, CalendarPlus, Check, GraduationCap, ListChecks, Pill, Plus, Sparkles, Sun } from 'lucide-react';
 import { useStore } from '../store/AppStore';
 import { useReminders } from '../reminders/ReminderProvider';
-import { agendaFor, isCompleted } from '../domain/agenda';
+import { agendaFor, isCancelled, isCompleted } from '../domain/agenda';
 import { habitCount, habitScheduledOn } from '../domain/habits';
 import { percent } from '../domain/stats';
 import { saveEvent, saveHabit, setHabitCount } from '../store/mutations';
@@ -12,6 +12,7 @@ import { newId } from '../lib/id';
 import type { AppData, Category, HabitColor } from '../models/types';
 import { AgendaList } from '../components/events/AgendaList';
 import { EventForm } from '../components/events/EventForm';
+import { ClassForm } from '../components/events/ClassForm';
 import { MedicationForm } from '../components/medications/MedicationForm';
 import { Button } from '../components/ui/Button';
 import { Card, EmptyState, Fab, ProgressRing, SectionTitle } from '../components/ui/misc';
@@ -52,11 +53,13 @@ function withSampleDay(data: AppData, today: string): AppData {
 export function TodayPage() {
   const { data, update } = useStore();
   const { now, next } = useReminders();
-  const [adding, setAdding] = useState<'menu' | 'event' | 'medication' | null>(null);
+  const [adding, setAdding] = useState<'menu' | 'event' | 'class' | 'medication' | null>(null);
   const today = todayKey(now);
   const items = agendaFor(data, today, now);
-  const completed = items.filter(isCompleted).length;
-  const progress = percent(completed, items.length);
+  // Отменённые занятия остаются в списке, но в счётчики не входят.
+  const planned = items.filter((i) => !isCancelled(i));
+  const completed = planned.filter(isCompleted).length;
+  const progress = percent(completed, planned.length);
   const habits = data.habits.filter((h) => !h.archived && habitScheduledOn(h, today));
   const isFresh = data.events.length === 0 && data.medications.length === 0 && data.habits.length === 0;
   const name = data.settings.userName.trim();
@@ -74,7 +77,7 @@ export function TodayPage() {
         </ProgressRing>
         <div className="grid flex-1 grid-cols-2 gap-3">
           <div>
-            <div className="text-2xl font-semibold">{items.length}</div>
+            <div className="text-2xl font-semibold">{planned.length}</div>
             <div className="text-xs text-slate-500 dark:text-slate-400">запланировано</div>
           </div>
           <div>
@@ -82,7 +85,7 @@ export function TodayPage() {
             <div className="text-xs text-slate-500 dark:text-slate-400">выполнено</div>
           </div>
           <p className="col-span-2 text-xs text-slate-500 dark:text-slate-400">
-            {items.length === 0 ? 'На сегодня пока ничего нет.' : completed === items.length ? 'Всё на сегодня сделано.' : `Осталось: ${items.length - completed}`}
+            {planned.length === 0 ? 'На сегодня пока ничего нет.' : completed === planned.length ? 'Всё на сегодня сделано.' : `Осталось: ${planned.length - completed}`}
           </p>
         </div>
       </Card>
@@ -153,6 +156,7 @@ export function TodayPage() {
           <div className="grid gap-2.5">
             {([
               ['event', CalendarPlus, 'Событие или задачу', 'Встреча, занятие, дело на день'],
+              ['class', GraduationCap, 'Занятие в вузе', 'Пара с аудиторией и напоминанием за 10 минут'],
               ['medication', Pill, 'Лекарство', 'Расписание приёма с напоминаниями'],
             ] as const).map(([kind, Icon, title, text]) => (
               <button key={kind} type="button" onClick={() => setAdding(kind)} className="flex items-center gap-3 rounded-2xl bg-slate-50 p-4 text-left transition-colors hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700">
@@ -174,6 +178,7 @@ export function TodayPage() {
         </Modal>
       )}
       {adding === 'event' && <EventForm defaultDate={today} onClose={() => setAdding(null)} />}
+      {adding === 'class' && <ClassForm defaultDate={today} onClose={() => setAdding(null)} />}
       {adding === 'medication' && <MedicationForm onClose={() => setAdding(null)} />}
     </>
   );

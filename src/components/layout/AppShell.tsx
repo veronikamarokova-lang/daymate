@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { BellRing, Check, Globe, TriangleAlert, X } from 'lucide-react';
-import { hrefFor, NAV, type Route } from './nav';
+import { hrefFor, MOBILE_NAV, MORE_ROUTES, NAV, type Route } from './nav';
 import { useStore } from '../../store/AppStore';
 import { useReminders } from '../../reminders/ReminderProvider';
 import { formatTime } from '../../lib/date';
@@ -44,21 +44,24 @@ export function AppShell({ route, children }: { route: Route; children: ReactNod
         className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-100 bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg lg:hidden dark:border-slate-800 dark:bg-slate-900/90"
       >
         <div className="mx-auto flex max-w-lg">
-          {NAV.map(({ route: r, label, icon: Icon }) => (
-            <a
-              key={r}
-              href={hrefFor(r)}
-              aria-current={route === r ? 'page' : undefined}
-              className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-xl py-2 text-[10px] font-medium transition-colors ${
-                route === r ? 'text-violet-600 dark:text-violet-300' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-              }`}
-            >
-              <span className={`grid h-7 w-11 place-items-center rounded-full transition-colors ${route === r ? 'bg-violet-100 dark:bg-violet-500/20' : ''}`}>
-                <Icon size={19} strokeWidth={route === r ? 2.25 : 1.9} />
-              </span>
-              <span className="max-w-full truncate px-0.5">{label}</span>
-            </a>
-          ))}
+          {MOBILE_NAV.map(({ route: r, label, icon: Icon }) => {
+            const current = route === r || (r === 'more' && MORE_ROUTES.includes(route));
+            return (
+              <a
+                key={r}
+                href={hrefFor(r)}
+                aria-current={current ? 'page' : undefined}
+                className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-xl py-2 text-[10px] font-medium transition-colors ${
+                  current ? 'text-violet-600 dark:text-violet-300' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                }`}
+              >
+                <span className={`grid h-7 w-11 place-items-center rounded-full transition-colors ${current ? 'bg-violet-100 dark:bg-violet-500/20' : ''}`}>
+                  <Icon size={19} strokeWidth={current ? 2.25 : 1.9} />
+                </span>
+                <span className="max-w-full truncate px-0.5">{label}</span>
+              </a>
+            );
+          })}
         </div>
       </nav>
     </div>

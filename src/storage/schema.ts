@@ -70,6 +70,11 @@ function parseEvent(v: unknown): PlannerEvent | null {
     date: v.date,
     time: isValidTime(v.time) ? v.time : undefined,
     notes: str(v.notes).slice(0, 2000) || undefined,
+    kind: v.kind === 'class' ? 'class' : undefined,
+    endTime: isValidTime(v.endTime) ? v.endTime : undefined,
+    location: str(v.location).trim().slice(0, 200) || undefined,
+    teacher: str(v.teacher).trim().slice(0, 200) || undefined,
+    classType: str(v.classType).trim().slice(0, 60) || undefined,
     recurrence: parseRecurrence(v.recurrence),
     exdates: list(v.exdates).filter(isValidDateKey),
     reminder: { enabled: reminder.enabled === true, offsetMin: num(reminder.offsetMin, 0, 0, 24 * 60) },
@@ -157,7 +162,7 @@ export function parseAppData(raw: unknown): AppData {
   const eventLogs: EventLog[] = [];
   for (const l of list(raw.eventLogs)) {
     if (!isObj(l) || !eventIds.has(str(l.eventId)) || !isValidDateKey(l.date)) continue;
-    eventLogs.push({ eventId: str(l.eventId), date: l.date, status: l.status === 'skipped' ? 'skipped' : 'done', at: str(l.at) });
+    eventLogs.push({ eventId: str(l.eventId), date: l.date, status: oneOf(l.status, ['done', 'skipped', 'cancelled'] as const, 'done'), at: str(l.at) });
   }
 
   const doseLogs: DoseLog[] = [];

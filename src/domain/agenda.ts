@@ -81,6 +81,11 @@ export function isResolved(item: AgendaItem): boolean {
   return item.kind === 'event' ? item.status !== 'pending' : item.status === 'taken' || item.status === 'skipped';
 }
 
+/** Отменённое занятие или событие: остаётся в списке, но не считается запланированным. */
+export function isCancelled(item: AgendaItem): boolean {
+  return item.kind === 'event' && item.status === 'cancelled';
+}
+
 export function isCompleted(item: AgendaItem): boolean {
   return item.kind === 'event' ? item.status === 'done' : item.status === 'taken';
 }
