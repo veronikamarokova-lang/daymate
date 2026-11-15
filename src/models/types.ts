@@ -147,4 +147,6 @@ export interface AppData {
   doseLogs: DoseLog[];
   habits: Habit[];
   habitLogs: HabitLogs;
+  /** Отмеченные дни цикла. Хранятся на устройстве; партнёру видны только при включённом общем доступе. */
+  cycleDays: DateKey[];
 }

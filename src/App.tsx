@@ -10,12 +10,14 @@ import { StatsPage } from './pages/StatsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TimetablePage } from './pages/TimetablePage';
 import { MorePage } from './pages/MorePage';
+import { TogetherPage } from './pages/TogetherPage';
 
 const PAGES: Record<Route, () => React.JSX.Element> = {
   today: TodayPage,
   timetable: TimetablePage,
   medications: MedicationsPage,
   calendar: CalendarPage,
+  together: TogetherPage,
   habits: HabitsPage,
   stats: StatsPage,
   settings: SettingsPage,

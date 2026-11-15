@@ -228,3 +228,31 @@ describe('расписание вуза', () => {
     expect(parseAppData(JSON.parse(JSON.stringify(cancelled))).events[0].location).toBe('ауд. 305, корпус Б');
   });
 });
+
+describe('совместные данные', () => {
+  it('ответ сервера не затирает правки, сделанные во время запроса', async () => {
+    const { applySync, emptyShared } = await import('../shared/types');
+    const item = (id: string, text: string, extra = {}) => ({ id, type: 'note' as const, payload: { text }, authorId: 'u1', updatedAt: '', deleted: false, ...extra });
+    const sent = item('a', 'первая');
+    const later = item('a', 'исправленная');
+    const removed = item('b', '', { deleted: true });
+    const state = { ...emptyShared(), space: { id: 's', members: [] }, items: { a: later, b: item('b', 'старая') }, outbox: [sent, later, removed] };
+    const next = applySync(state, { space: { id: 's', members: [{ id: 'u1', name: 'Я' }, { id: 'u2', name: 'Она' }] }, seq: 7, items: [{ ...sent, seq: 7 }, item('c', 'от партнёра', { authorId: 'u2', seq: 6 })] }, [sent]);
+    expect(next.items.a.payload.text).toBe('исправленная');
+    expect(next.items.b).toBeUndefined();
+    expect(next.items.c.payload.text).toBe('от партнёра');
+    expect(next.outbox).toEqual([later, removed]);
+    expect(next.seq).toBe(7);
+    expect(applySync(next, { space: null, seq: 0, items: [] }, []).items).toEqual({});
+  });
+
+  it('средняя длина цикла и ориентировочная дата', async () => {
+    const { cycleSummary } = await import('../shared/cycle');
+    const days = ['2026-09-01', '2026-09-02', '2026-09-03', '2026-09-29', '2026-09-30', '2026-10-29', '2026-10-30'];
+    const s = cycleSummary(days);
+    expect(s.starts).toEqual(['2026-09-01', '2026-09-29', '2026-10-29']);
+    expect(s.avgCycle).toBe(29);
+    expect(s.nextStart).toBe('2026-11-27');
+    expect(cycleSummary(['2026-10-01']).nextStart).toBeUndefined();
+  });
+});

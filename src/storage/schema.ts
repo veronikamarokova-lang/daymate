@@ -30,6 +30,7 @@ export function emptyData(): AppData {
     doseLogs: [],
     habits: [],
     habitLogs: {},
+    cycleDays: [],
   };
 }
 
@@ -191,5 +192,6 @@ export function parseAppData(raw: unknown): AppData {
     schemaVersion: SCHEMA_VERSION,
     settings: parseSettings(raw.settings),
     events, eventLogs, medications, doseLogs, habits, habitLogs,
+    cycleDays: [...new Set(list(raw.cycleDays).filter(isValidDateKey))].sort(),
   };
 }

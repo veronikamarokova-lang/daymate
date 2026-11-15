@@ -1,0 +1,17 @@
+[Unit]
+Description=DayMate shared data server
+After=network.target
+
+[Service]
+User=daymate
+Environment=DAYMATE_DB=/var/lib/daymate/daymate.db
+ExecStart=/usr/bin/python3 /opt/daymate/daymate_server.py
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/daymate
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

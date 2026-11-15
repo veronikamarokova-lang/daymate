@@ -83,3 +83,8 @@ export function setHabitCount(data: AppData, id: string, date: DateKey, count: n
   else days[date] = Math.floor(count);
   return { ...data, habitLogs: { ...data.habitLogs, [id]: days } };
 }
+
+export function toggleCycleDay(data: AppData, date: DateKey): AppData {
+  const has = data.cycleDays.includes(date);
+  return { ...data, cycleDays: has ? data.cycleDays.filter((d) => d !== date) : [...data.cycleDays, date].sort() };
+}
