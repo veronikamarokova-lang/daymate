@@ -12,7 +12,21 @@ python3 server/test_server.py                         # автоматическ
 DAYMATE_DB=./daymate.db python3 server/daymate_server.py   # запуск на http://127.0.0.1:8787
 ```
 
-## Установка на сервер (Linux с systemd)
+## Быстрая установка (Ubuntu/Debian, без домена)
+
+Подходит, когда на сервер заходят по IP-адресу, а порт 443 занят другой программой.
+Скрипт ставит сервер DayMate и Caddy, получает HTTPS-сертификат на IP-адрес и открывает порт 8443:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/veronikamarokova-lang/daymate/main/server/install.sh -o install.sh
+bash install.sh
+```
+
+В конце скрипт печатает адрес вида `https://IP:8443` — его вводят оба пользователя в разделе «Вместе».
+Порт 80 должен быть свободен: через него Let's Encrypt проверяет владение адресом.
+
+## Ручная установка (Linux с systemd)
+
 
 ```bash
 sudo useradd --system --home /var/lib/daymate --create-home daymate
